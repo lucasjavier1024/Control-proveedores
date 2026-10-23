@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ERP Proveedores | Compras & Pagos</title>
+  <title>AP Manager | Control de Proveedores, Compras & Pagos</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -19,17 +19,124 @@
       }
     }
   </script>
+  <style>
+    @media print {
+      /* Ocultar elementos de navegación, sidebar, botones y elementos no imprimibles */
+      aside, header, nav, .no-print, button, input, select {
+        display: none !important;
+      }
+
+      /* Elementos exclusivamente visibles para impresión */
+      .print-only {
+        display: block !important;
+      }
+
+      body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        font-size: 12pt;
+      }
+
+      .flex, .flex-1, main, section {
+        display: block !important;
+        overflow: visible !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+
+      /* Cuando se imprime un modal activo (ej: Estado de Cuenta) */
+      body.printing-modal .main-app-content {
+        display: none !important;
+      }
+
+      .fixed {
+        position: static !important;
+        background: transparent !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+
+      .modal-box {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+      }
+
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      th, td {
+        border: 1px solid #cbd5e1 !important;
+        padding: 6px 10px !important;
+        color: #000000 !important;
+      }
+
+      th {
+        background-color: #f1f5f9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .print-break-inside-avoid {
+        page-break-inside: avoid;
+      }
+    }
+
+    /* Ocultar elementos print-only en pantalla normal */
+    .print-only {
+      display: none;
+    }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased">
 
+  <!-- PRINT HEADER (Se activa al imprimir) -->
+  <div id="print-header" class="print-only p-4 mb-4 border-b border-slate-300">
+    <div class="flex justify-between items-start">
+      <div class="flex items-center space-x-4">
+        <div id="print-logo-container" class="w-16 h-16 flex items-center justify-center bg-slate-100 rounded border border-slate-200 overflow-hidden">
+          <img id="print-header-logo" src="" alt="Logo" class="max-h-full max-w-full object-contain hidden">
+          <i id="print-header-default-icon" data-lucide="building-2" class="w-8 h-8 text-slate-600"></i>
+        </div>
+        <div>
+          <h1 id="print-header-company-name" class="text-2xl font-bold text-slate-900">AP Manager</h1>
+          <p id="print-header-taxid" class="text-xs text-slate-600">CUIT: -</p>
+          <p id="print-header-contact" class="text-xs text-slate-500">-</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <h2 id="print-report-title" class="text-lg font-bold text-slate-800 uppercase tracking-wide">Reporte de Gestión</h2>
+        <p id="print-report-date" class="text-xs text-slate-500 mt-1">Fecha de emisión: -</p>
+      </div>
+    </div>
+  </div>
+
   <div class="flex h-screen overflow-hidden">
     <!-- SIDEBAR -->
-    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0">
-      <div class="h-16 flex items-center px-6 bg-slate-950 font-bold text-lg text-white tracking-wide border-b border-slate-800">
-        <i data-lucide="boxes" class="w-6 h-6 mr-3 text-emerald-400"></i>
-        AP Manager
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 no-print">
+      <!-- SIDEBAR BRANDING HEADER -->
+      <div class="h-16 flex items-center px-4 bg-slate-950 border-b border-slate-800 overflow-hidden">
+        <div id="sidebar-logo-container" class="w-9 h-9 flex items-center justify-center bg-slate-800 rounded border border-slate-700 flex-shrink-0 mr-3 overflow-hidden">
+          <img id="sidebar-logo-img" src="" alt="Logo" class="max-h-full max-w-full object-contain hidden">
+          <i id="sidebar-default-icon" data-lucide="boxes" class="w-5 h-5 text-emerald-400"></i>
+        </div>
+        <div class="truncate">
+          <span id="sidebar-company-name" class="font-bold text-sm text-white tracking-wide block truncate">AP Manager</span>
+          <span class="text-[10px] text-slate-400 block -mt-0.5">Control de Cuentas</span>
+        </div>
       </div>
-      <nav class="flex-1 px-4 py-6 space-y-2">
+
+      <!-- NAVIGATION LINKS -->
+      <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
         <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-emerald-600 text-white">
           <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
         </button>
@@ -42,19 +149,36 @@
         <button onclick="navigate('payments')" id="nav-payments" class="nav-item w-full flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
           <i data-lucide="credit-card" class="w-5 h-5 mr-3"></i> Tesorería / Pagos
         </button>
+        <button onclick="navigate('config')" id="nav-config" class="nav-item w-full flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+          <i data-lucide="settings" class="w-5 h-5 mr-3"></i> Configuración
+        </button>
       </nav>
+
       <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
         Ambiente: <span class="text-emerald-400 font-semibold">Producción</span>
       </div>
     </aside>
 
     <!-- MAIN WRAPPER -->
-    <div class="flex-1 flex flex-col overflow-y-auto">
+    <div class="flex-1 flex flex-col overflow-y-auto main-app-content">
       
-      <!-- TOPBAR -->
-      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
-        <h1 id="page-title" class="text-xl font-bold text-slate-800">Panel Principal</h1>
+      <!-- TOPBAR HEADER -->
+      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 no-print">
         <div class="flex items-center space-x-3">
+          <div id="topbar-logo-container" class="w-8 h-8 flex items-center justify-center bg-slate-100 rounded border border-slate-200 overflow-hidden">
+            <img id="topbar-logo-img" src="" alt="Logo" class="max-h-full max-w-full object-contain hidden">
+            <i id="topbar-default-icon" data-lucide="building" class="w-4 h-4 text-slate-600"></i>
+          </div>
+          <div>
+            <h1 id="page-title" class="text-lg font-bold text-slate-800 leading-tight">Panel Principal</h1>
+            <p id="topbar-company-subtitle" class="text-xs text-slate-500 font-medium">Empresa</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <button onclick="navigate('config')" class="px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded border border-slate-300 flex items-center transition-colors">
+            <i data-lucide="settings" class="w-3.5 h-3.5 mr-1.5"></i> Configurar Empresa
+          </button>
           <button onclick="exportData()" class="px-3 py-2 text-xs font-semibold text-slate-600 border border-slate-300 rounded hover:bg-slate-100 flex items-center">
             <i data-lucide="download" class="w-4 h-4 mr-1"></i> Backup JSON
           </button>
@@ -69,29 +193,49 @@
         
         <!-- VIEW: DASHBOARD -->
         <section id="view-dashboard" class="space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Comprado</span>
-              <p id="kpi-total-purchases" class="text-2xl font-bold text-slate-900 mt-2">$0.00</p>
+              <p id="kpi-total-purchases" class="text-xl font-bold text-slate-900 mt-2">$0.00</p>
             </div>
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Pagado</span>
-              <p id="kpi-total-paid" class="text-2xl font-bold text-emerald-600 mt-2">$0.00</p>
+              <p id="kpi-total-paid" class="text-xl font-bold text-emerald-600 mt-2">$0.00</p>
             </div>
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cuentas por Pagar (Deuda)</span>
-              <p id="kpi-debt" class="text-2xl font-bold text-rose-600 mt-2">$0.00</p>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cuentas por Pagar</span>
+              <p id="kpi-debt" class="text-xl font-bold text-rose-600 mt-2">$0.00</p>
             </div>
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <!-- NUEVO KPI: FACTURAS VENCIDAS -->
+            <div class="bg-rose-50 p-5 rounded-xl border border-rose-200 shadow-sm">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-semibold text-rose-800 uppercase tracking-wider">Facturas Vencidas</span>
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i>
+              </div>
+              <p id="kpi-overdue-amount" class="text-xl font-bold text-rose-700 mt-2">$0.00</p>
+              <p id="kpi-overdue-count" class="text-xs text-rose-600 font-medium mt-1">0 facturas vencidas</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Proveedores Activos</span>
-              <p id="kpi-suppliers" class="text-2xl font-bold text-slate-800 mt-2">0</p>
+              <p id="kpi-suppliers" class="text-xl font-bold text-slate-800 mt-2">0</p>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <!-- LISTA DE ALERTAS: FACTURAS VENCIDAS O PRÓXIMAS A VENCER (7 DÍAS) -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-base font-bold flex items-center text-slate-800">
+                <i data-lucide="bell" class="w-5 h-5 mr-2 text-rose-500"></i> Alertas de Vencimiento (Vencidas y Próximos 7 días)
+              </h2>
+              <span class="text-xs bg-slate-100 text-slate-600 font-medium px-2.5 py-1 rounded-full">Fecha actual: <span id="current-date-badge"></span></span>
+            </div>
+            <div id="overdue-alerts-list" class="divide-y divide-slate-100 text-sm"></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <h2 class="text-base font-bold mb-4 flex items-center text-slate-800">
-                <i data-lucide="alert-circle" class="w-5 h-5 mr-2 text-amber-500"></i> Facturas Pendientes de Pago
+                <i data-lucide="clock" class="w-5 h-5 mr-2 text-amber-500"></i> Facturas Pendientes de Pago
               </h2>
               <div id="pending-invoices-list" class="divide-y divide-slate-100 text-sm"></div>
             </div>
@@ -107,7 +251,7 @@
 
         <!-- VIEW: PROVEEDORES -->
         <section id="view-suppliers" class="space-y-6 hidden">
-          <div class="flex justify-between items-center">
+          <div class="flex justify-between items-center no-print">
             <input type="text" id="search-supplier" oninput="renderSuppliers()" placeholder="Buscar por Nombre o CUIT..." class="px-4 py-2 border rounded-lg w-80 text-sm focus:ring-2 focus:ring-slate-900 outline-none">
             <button onclick="openModal('modal-supplier')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center">
               <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nuevo Proveedor
@@ -121,7 +265,7 @@
                   <th class="p-4">CUIT / Tax ID</th>
                   <th class="p-4">Contacto</th>
                   <th class="p-4 text-right">Saldo Adeudado</th>
-                  <th class="p-4 text-center">Acciones</th>
+                  <th class="p-4 text-center no-print">Acciones</th>
                 </tr>
               </thead>
               <tbody id="suppliers-table-body" class="divide-y divide-slate-200"></tbody>
@@ -129,9 +273,9 @@
           </div>
         </section>
 
-        <!-- VIEW: COMPRAS -->
+        <!-- VIEW: COMPRAS / FACTURAS -->
         <section id="view-purchases" class="space-y-6 hidden">
-          <div class="flex justify-between items-center">
+          <div class="flex justify-between items-center no-print">
             <div class="flex space-x-3">
               <select id="filter-purchase-supplier" onchange="renderPurchases()" class="px-3 py-2 border rounded-lg text-sm">
                 <option value="">Todos los proveedores</option>
@@ -141,23 +285,30 @@
                 <option value="Pendiente">Pendiente</option>
                 <option value="Parcial">Pago Parcial</option>
                 <option value="Pagado">Pagado</option>
+                <option value="Vencida">Facturas Vencidas</option>
               </select>
             </div>
-            <button onclick="openModal('modal-purchase')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center">
-              <i data-lucide="file-plus" class="w-4 h-4 mr-2"></i> Nueva Factura / Compra
-            </button>
+            <div class="flex space-x-2">
+              <button onclick="printPurchasesReport()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-4 py-2 rounded-lg text-sm font-semibold flex items-center transition-colors">
+                <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Imprimir Reporte
+              </button>
+              <button onclick="openModal('modal-purchase')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center">
+                <i data-lucide="file-plus" class="w-4 h-4 mr-2"></i> Nueva Factura / Compra
+              </button>
+            </div>
           </div>
           <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <table class="w-full text-left border-collapse text-sm">
               <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
                 <tr>
                   <th class="p-4">N° Factura</th>
-                  <th class="p-4">Fecha</th>
+                  <th class="p-4">Emisión</th>
+                  <th class="p-4">Vencimiento</th>
                   <th class="p-4">Proveedor</th>
                   <th class="p-4">Concepto</th>
                   <th class="p-4 text-right">Monto</th>
                   <th class="p-4 text-center">Estado</th>
-                  <th class="p-4 text-center">Acción</th>
+                  <th class="p-4 text-center no-print">Acción</th>
                 </tr>
               </thead>
               <tbody id="purchases-table-body" class="divide-y divide-slate-200"></tbody>
@@ -165,13 +316,18 @@
           </div>
         </section>
 
-        <!-- VIEW: PAGOS -->
+        <!-- VIEW: PAGOS / TESORERÍA -->
         <section id="view-payments" class="space-y-6 hidden">
-          <div class="flex justify-between items-center">
+          <div class="flex justify-between items-center no-print">
             <h2 class="text-sm font-semibold text-slate-500">Historial de órdenes de pago emitidas</h2>
-            <button onclick="openPaymentModal()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 flex items-center">
-              <i data-lucide="dollar-sign" class="w-4 h-4 mr-2"></i> Registrar Pago
-            </button>
+            <div class="flex space-x-2">
+              <button onclick="printPaymentsReport()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-4 py-2 rounded-lg text-sm font-semibold flex items-center transition-colors">
+                <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Imprimir Reporte
+              </button>
+              <button onclick="openPaymentModal()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 flex items-center">
+                <i data-lucide="dollar-sign" class="w-4 h-4 mr-2"></i> Registrar Pago
+              </button>
+            </div>
           </div>
           <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <table class="w-full text-left border-collapse text-sm">
@@ -187,6 +343,75 @@
               </thead>
               <tbody id="payments-table-body" class="divide-y divide-slate-200"></tbody>
             </table>
+          </div>
+        </section>
+
+        <!-- VIEW: CONFIGURACIÓN DEL NEGOCIO -->
+        <section id="view-config" class="space-y-6 hidden">
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-3xl">
+            <h2 class="text-lg font-bold text-slate-900 mb-2 border-b pb-3 flex items-center">
+              <i data-lucide="settings" class="w-5 h-5 mr-2 text-slate-700"></i> Configuración de la Empresa / Negocio
+            </h2>
+            <p class="text-xs text-slate-500 mb-6">Esta información aparecerá en los reportes, impresiones, membretes y encabezados del sistema.</p>
+
+            <form id="form-config" onsubmit="saveCompanyConfig(event)" class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre Comercial / Razón Social *</label>
+                  <input type="text" id="cfg-name" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">CUIT / Identificación Fiscal *</label>
+                  <input type="text" id="cfg-taxid" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Dirección</label>
+                  <input type="text" id="cfg-address" class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                  <input type="text" id="cfg-phone" class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Email de Contacto</label>
+                  <input type="email" id="cfg-email" class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+                </div>
+              </div>
+
+              <!-- LOGO CONFIGURATION -->
+              <div class="border-t pt-4 mt-4">
+                <label class="block text-xs font-semibold text-slate-700 mb-2">Logo de la Empresa</label>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                  <!-- Preview Box -->
+                  <div class="w-24 h-24 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center bg-slate-50 overflow-hidden flex-shrink-0">
+                    <img id="cfg-logo-preview" src="" alt="Preview" class="max-h-full max-w-full object-contain hidden">
+                    <i id="cfg-logo-placeholder" data-lucide="image" class="w-8 h-8 text-slate-400"></i>
+                  </div>
+                  <div class="flex-1 space-y-3 w-full">
+                    <div>
+                      <label class="block text-[11px] font-medium text-slate-500 mb-1">Subir archivo de imagen</label>
+                      <input type="file" id="cfg-logo-file" accept="image/*" onchange="handleLogoFileUpload(event)" class="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
+                    </div>
+                    <div>
+                      <label class="block text-[11px] font-medium text-slate-500 mb-1">O pegar URL directa de imagen</label>
+                      <input type="url" id="cfg-logo-url" oninput="handleLogoUrlInput(this.value)" placeholder="https://ejemplo.com/logo.png" class="w-full border p-2 rounded text-xs outline-none focus:ring-2 focus:ring-slate-900">
+                    </div>
+                    <button type="button" onclick="removeLogo()" class="text-xs text-rose-600 hover:underline flex items-center">
+                      <i data-lucide="trash" class="w-3.5 h-3.5 mr-1"></i> Quitar logo actual
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-4 flex justify-end space-x-3 border-t">
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg text-sm flex items-center transition-colors">
+                  <i data-lucide="save" class="w-4 h-4 mr-2"></i> Guardar Configuración
+                </button>
+              </div>
+            </form>
           </div>
         </section>
 
@@ -225,7 +450,7 @@
     </div>
   </div>
 
-  <!-- Modal Nueva Compra -->
+  <!-- Modal Nueva Compra (Con fecha de vencimiento obligatoria) -->
   <div id="modal-purchase" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-lg rounded-xl p-6 shadow-xl space-y-4">
       <h3 class="text-lg font-bold text-slate-900">Ingresar Factura de Proveedor</h3>
@@ -233,24 +458,30 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">N° Comprobante *</label>
-            <input type="text" id="pur-invnum" placeholder="FC-0001-00029" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+            <input type="text" id="pur-invnum" placeholder="FC-0001-00029" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha Emisión *</label>
-            <input type="date" id="pur-date" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Proveedor *</label>
+            <select id="pur-supplier" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900"></select>
           </div>
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Proveedor *</label>
-          <select id="pur-supplier" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2"></select>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha Emisión *</label>
+            <input type="date" id="pur-date" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha Vencimiento *</label>
+            <input type="date" id="pur-duedate" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+          </div>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Descripción / Concepto *</label>
-          <input type="text" id="pur-desc" placeholder="p. ej. Servidores Cloud Mensuales" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+          <input type="text" id="pur-desc" placeholder="p. ej. Servidores Cloud Mensuales" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Monto Total ($) *</label>
-          <input type="number" step="0.01" min="0.01" id="pur-total" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+          <input type="number" step="0.01" min="0.01" id="pur-total" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
         </div>
         <div class="flex justify-end space-x-2 pt-4">
           <button type="button" onclick="closeModal('modal-purchase')" class="px-4 py-2 border rounded-lg text-sm hover:bg-slate-50">Cancelar</button>
@@ -267,22 +498,22 @@
       <form id="form-payment" onsubmit="savePayment(event)" class="space-y-3">
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Factura a Pagar *</label>
-          <select id="pay-purchase-id" onchange="onPaymentInvoiceChange()" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2"></select>
+          <select id="pay-purchase-id" onchange="onPaymentInvoiceChange()" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900"></select>
           <p id="pay-invoice-help" class="text-xs text-slate-500 mt-1"></p>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Monto a Pagar ($) *</label>
-            <input type="number" step="0.01" min="0.01" id="pay-amount" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+            <input type="number" step="0.01" min="0.01" id="pay-amount" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Pago *</label>
-            <input type="date" id="pay-date" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+            <input type="date" id="pay-date" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
           </div>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Método de Pago</label>
-          <select id="pay-method" class="w-full border p-2 rounded text-sm outline-none">
+          <select id="pay-method" class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
             <option value="Transferencia Bancaria">Transferencia Bancaria</option>
             <option value="Cheque / E-Check">Cheque / E-Check</option>
             <option value="Efectivo">Efectivo</option>
@@ -296,23 +527,125 @@
     </div>
   </div>
 
-  <!-- APPLICATION JAVASCRIPT LOGIC -->
+  <!-- MODAL: ESTADO DE CUENTA DE PROVEEDOR -->
+  <div id="modal-statement" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-white w-full max-w-4xl rounded-xl p-6 shadow-xl space-y-6 modal-box my-8">
+
+      <!-- Modal Header -->
+      <div class="flex justify-between items-start border-b pb-4">
+        <div>
+          <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Estado de Cuenta Corriente</span>
+          <h2 id="stmt-supplier-name" class="text-2xl font-bold text-slate-900">Proveedor</h2>
+          <p id="stmt-supplier-taxid" class="text-xs text-slate-500 font-mono mt-0.5">CUIT: -</p>
+        </div>
+        <div class="flex items-center space-x-2 no-print">
+          <button onclick="printStatement()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center transition-colors">
+            <i data-lucide="printer" class="w-4 h-4 mr-1.5"></i> Imprimir / PDF
+          </button>
+          <button onclick="closeModal('modal-statement')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Supplier Info Cards & Totals -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-1">
+          <p class="font-semibold text-slate-500">Datos de Contacto</p>
+          <p id="stmt-supplier-email" class="text-slate-800 truncate">Email: -</p>
+          <p id="stmt-supplier-phone" class="text-slate-800">Tel: -</p>
+        </div>
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <span class="text-[11px] font-semibold text-slate-500 uppercase">Total Facturado</span>
+          <p id="stmt-total-billed" class="text-lg font-bold text-slate-900 mt-1">$0.00</p>
+        </div>
+        <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+          <span class="text-[11px] font-semibold text-emerald-800 uppercase">Total Pagado</span>
+          <p id="stmt-total-paid" class="text-lg font-bold text-emerald-700 mt-1">$0.00</p>
+        </div>
+        <div class="bg-rose-50 p-3 rounded-lg border border-rose-200">
+          <span class="text-[11px] font-semibold text-rose-800 uppercase">Saldo Adeudado</span>
+          <p id="stmt-balance" class="text-lg font-bold text-rose-700 mt-1">$0.00</p>
+        </div>
+      </div>
+
+      <!-- Invoices Section -->
+      <div>
+        <h3 class="text-sm font-bold text-slate-800 mb-2 flex items-center">
+          <i data-lucide="file-text" class="w-4 h-4 mr-1.5 text-slate-600"></i> Facturas Emitidas por el Proveedor
+        </h3>
+        <div class="border rounded-lg overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 text-slate-600 uppercase font-semibold">
+              <tr>
+                <th class="p-2.5">N° Comprobante</th>
+                <th class="p-2.5">Emisión</th>
+                <th class="p-2.5">Vencimiento</th>
+                <th class="p-2.5">Concepto</th>
+                <th class="p-2.5 text-right">Total</th>
+                <th class="p-2.5 text-right">Pagado</th>
+                <th class="p-2.5 text-right">Saldo</th>
+                <th class="p-2.5 text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="stmt-invoices-body" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Payments Section -->
+      <div>
+        <h3 class="text-sm font-bold text-slate-800 mb-2 flex items-center">
+          <i data-lucide="check-circle-2" class="w-4 h-4 mr-1.5 text-emerald-600"></i> Pagos Registrados
+        </h3>
+        <div class="border rounded-lg overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 text-slate-600 uppercase font-semibold">
+              <tr>
+                <th class="p-2.5">ID Recibo</th>
+                <th class="p-2.5">Fecha</th>
+                <th class="p-2.5">Factura Aplicada</th>
+                <th class="p-2.5">Método de Pago</th>
+                <th class="p-2.5 text-right">Monto Pagado</th>
+              </tr>
+            </thead>
+            <tbody id="stmt-payments-body" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2 border-t no-print">
+        <button onclick="closeModal('modal-statement')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold rounded-lg">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
   <script>
     /**
-     * DOMAIN STATE & STORAGE
+     * DOMAIN STATE & STORAGE (V2 WITH AUTOMATIC MIGRATION FROM V1)
      */
-    const STORAGE_KEY = 'ERP_PROVEEDORES_DATA_V1';
+    const STORAGE_KEY_V2 = 'ERP_PROVEEDORES_DATA_V2';
+    const STORAGE_KEY_V1 = 'ERP_PROVEEDORES_DATA_V1';
 
     const defaultData = {
+      company: {
+        name: 'AP Manager Corp',
+        taxId: '30-99887766-5',
+        address: 'Av. Corrientes 1234, CABA',
+        phone: '+54 11 5555-0199',
+        email: 'contacto@apmanager.com',
+        logo: ''
+      },
       suppliers: [
         { id: 'sup-1', name: 'Datacenter Sur S.A.', taxId: '30-71122334-9', email: 'facturacion@datacentersur.com', phone: '+54 11 4455-6677' },
         { id: 'sup-2', name: 'Papelera Industrial SRL', taxId: '30-65544332-1', email: 'ventas@papeleraind.com', phone: '+54 11 9988-1122' },
         { id: 'sup-3', name: 'Tech Solutions Consultoría', taxId: '33-88990011-9', email: 'contacto@techsolutions.io', phone: '+54 11 3322-1100' }
       ],
       purchases: [
-        { id: 'pur-1', invoiceNumber: 'A-0001-00004521', supplierId: 'sup-1', date: '2026-03-01', description: 'Housing de Servidores Marzo', total: 1200.00 },
-        { id: 'pur-2', invoiceNumber: 'A-0002-00000891', supplierId: 'sup-2', date: '2026-03-05', description: 'Insumos de oficina y papelería', total: 450.00 },
-        { id: 'pur-3', invoiceNumber: 'B-0005-00001123', supplierId: 'sup-3', date: '2026-03-10', description: 'Consultoría Cloud & DevOps', total: 3400.00 }
+        { id: 'pur-1', invoiceNumber: 'A-0001-00004521', supplierId: 'sup-1', date: '2026-03-01', dueDate: '2026-03-15', description: 'Housing de Servidores Marzo', total: 1200.00 },
+        { id: 'pur-2', invoiceNumber: 'A-0002-00000891', supplierId: 'sup-2', date: '2026-03-05', dueDate: '2026-03-20', description: 'Insumos de oficina y papelería', total: 450.00 },
+        { id: 'pur-3', invoiceNumber: 'B-0005-00001123', supplierId: 'sup-3', date: '2026-03-10', dueDate: '2026-04-10', description: 'Consultoría Cloud & DevOps', total: 3400.00 }
       ],
       payments: [
         { id: 'pay-1', purchaseId: 'pur-1', supplierId: 'sup-1', date: '2026-03-04', amount: 1200.00, method: 'Transferencia Bancaria' },
@@ -323,17 +656,57 @@
     let state = loadState();
 
     function loadState() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultData));
+      // 1. Intentar cargar V2
+      const savedV2 = localStorage.getItem(STORAGE_KEY_V2);
+      if (savedV2) {
+        try {
+          const parsed = JSON.parse(savedV2);
+          if (!parsed.company) parsed.company = { ...defaultData.company };
+          if (parsed.purchases) {
+            parsed.purchases.forEach(p => {
+              if (!p.dueDate) p.dueDate = p.date;
+            });
+          }
+          return parsed;
+        } catch (err) {
+          console.error('Error al parsear V2 data:', err);
+        }
+      }
+
+      // 2. Intentar migrar V1 si existe
+      const savedV1 = localStorage.getItem(STORAGE_KEY_V1);
+      if (savedV1) {
+        try {
+          const parsedV1 = JSON.parse(savedV1);
+          const migrated = {
+            company: { ...defaultData.company },
+            suppliers: parsedV1.suppliers || [],
+            purchases: (parsedV1.purchases || []).map(p => ({
+              ...p,
+              dueDate: p.dueDate || p.date
+            })),
+            payments: parsedV1.payments || []
+          };
+          localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(migrated));
+          return migrated;
+        } catch (err) {
+          console.error('Error al migrar V1 data:', err);
+        }
+      }
+
+      // 3. Cargar datos por defecto
+      const initial = JSON.parse(JSON.stringify(defaultData));
+      localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(initial));
+      return initial;
     }
 
     function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(state));
       renderApp();
     }
 
     /**
-     * BUSINESS LOGIC CALCULATIONS
+     * BUSINESS LOGIC & DUE DATE CALCULATIONS
      */
     function getInvoicePaymentsTotal(purchaseId) {
       return state.payments
@@ -360,7 +733,52 @@
       return totalPurchased - totalPaid;
     }
 
-    const formatCurrency = (val) => '$ ' + Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+    // Calcula si una factura está vencida o cuántos días le quedan
+    function getDueDateInfo(purchase) {
+      const paid = getInvoicePaymentsTotal(purchase.id);
+      const isFullyPaid = paid >= purchase.total;
+
+      if (!purchase.dueDate) {
+        return { isOverdue: false, isNearDue: false, daysDiff: 0, statusLabel: 'Sin fecha' };
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const due = new Date(purchase.dueDate + 'T00:00:00');
+      const diffTime = due.getTime() - today.getTime();
+      const daysDiff = Math.ceil(diffTime / (1000 * 3600 * 24));
+
+      if (isFullyPaid) {
+        return { isOverdue: false, isNearDue: false, daysDiff, statusLabel: 'Al día (Pagado)' };
+      }
+
+      if (daysDiff < 0) {
+        const absDays = Math.abs(daysDiff);
+        return {
+          isOverdue: true,
+          isNearDue: false,
+          daysDiff,
+          statusLabel: `Vencida hace ${absDays} ${absDays === 1 ? 'día' : 'días'}`
+        };
+      } else if (daysDiff <= 7) {
+        return {
+          isOverdue: false,
+          isNearDue: true,
+          daysDiff,
+          statusLabel: daysDiff === 0 ? 'Vence hoy' : `Vence en ${daysDiff} ${daysDiff === 1 ? 'día' : 'días'}`
+        };
+      } else {
+        return {
+          isOverdue: false,
+          isNearDue: false,
+          daysDiff,
+          statusLabel: `Vence en ${daysDiff} días`
+        };
+      }
+    }
+
+    const formatCurrency = (val) => '$ ' + Number(val || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     /**
      * NAVIGATION ROUTER
@@ -374,8 +792,8 @@
 
       const target = document.getElementById(`view-${viewName}`);
       const btn = document.getElementById(`nav-${viewName}`);
-      if (target && btn) {
-        target.classList.remove('hidden');
+      if (target) target.classList.remove('hidden');
+      if (btn) {
         btn.classList.add('bg-emerald-600', 'text-white');
         btn.classList.remove('hover:bg-slate-800');
       }
@@ -384,21 +802,78 @@
         dashboard: 'Panel General',
         suppliers: 'Gestión de Proveedores',
         purchases: 'Cuentas por Pagar: Facturas de Compra',
-        payments: 'Tesorería: Libro de Pagos'
+        payments: 'Tesorería: Libro de Pagos',
+        config: 'Configuración del Negocio'
       };
-      document.getElementById('page-title').innerText = titles[viewName];
+      document.getElementById('page-title').innerText = titles[viewName] || 'AP Manager';
     }
 
     /**
-     * RENDERING
+     * RENDERING ENGINE
      */
     function renderApp() {
+      renderBranding();
       renderDashboard();
       renderSuppliers();
       renderPurchases();
       renderPayments();
+      populateConfigForm();
       populateSelectOptions();
       lucide.createIcons();
+    }
+
+    // Render dynamic branding in Header, Sidebar, and Print Header
+    function renderBranding() {
+      const company = state.company || defaultData.company;
+
+      // Sidebar
+      document.getElementById('sidebar-company-name').innerText = company.name || 'AP Manager';
+      const sideImg = document.getElementById('sidebar-logo-img');
+      const sideIcon = document.getElementById('sidebar-default-icon');
+      if (company.logo) {
+        sideImg.src = company.logo;
+        sideImg.classList.remove('hidden');
+        sideIcon.classList.add('hidden');
+      } else {
+        sideImg.src = '';
+        sideImg.classList.add('hidden');
+        sideIcon.classList.remove('hidden');
+      }
+
+      // Topbar Header
+      document.getElementById('topbar-company-subtitle').innerText = company.name + (company.taxId ? ` (${company.taxId})` : '');
+      const topImg = document.getElementById('topbar-logo-img');
+      const topIcon = document.getElementById('topbar-default-icon');
+      if (company.logo) {
+        topImg.src = company.logo;
+        topImg.classList.remove('hidden');
+        topIcon.classList.add('hidden');
+      } else {
+        topImg.src = '';
+        topImg.classList.add('hidden');
+        topIcon.classList.remove('hidden');
+      }
+
+      // Print Header
+      document.getElementById('print-header-company-name').innerText = company.name || 'AP Manager';
+      document.getElementById('print-header-taxid').innerText = company.taxId ? `CUIT / Identificación Fiscal: ${company.taxId}` : '';
+      const contactParts = [];
+      if (company.address) contactParts.push(company.address);
+      if (company.phone) contactParts.push(`Tel: ${company.phone}`);
+      if (company.email) contactParts.push(company.email);
+      document.getElementById('print-header-contact').innerText = contactParts.join(' | ') || '-';
+
+      const prtImg = document.getElementById('print-header-logo');
+      const prtIcon = document.getElementById('print-header-default-icon');
+      if (company.logo) {
+        prtImg.src = company.logo;
+        prtImg.classList.remove('hidden');
+        prtIcon.classList.add('hidden');
+      } else {
+        prtImg.src = '';
+        prtImg.classList.add('hidden');
+        prtIcon.classList.remove('hidden');
+      }
     }
 
     function renderDashboard() {
@@ -406,10 +881,72 @@
       const totalPaid = state.payments.reduce((acc, p) => acc + p.amount, 0);
       const totalDebt = totalPurchases - totalPaid;
 
+      // Calcular facturas vencidas
+      let overdueCount = 0;
+      let overdueAmount = 0;
+
+      const overdueAndNearItems = [];
+
+      state.purchases.forEach(p => {
+        const paid = getInvoicePaymentsTotal(p.id);
+        const debt = p.total - paid;
+        const dueInfo = getDueDateInfo(p);
+
+        if (debt > 0) {
+          if (dueInfo.isOverdue) {
+            overdueCount++;
+            overdueAmount += debt;
+            overdueAndNearItems.push({ purchase: p, debt, dueInfo, type: 'overdue' });
+          } else if (dueInfo.isNearDue) {
+            overdueAndNearItems.push({ purchase: p, debt, dueInfo, type: 'near' });
+          }
+        }
+      });
+
       document.getElementById('kpi-total-purchases').innerText = formatCurrency(totalPurchases);
       document.getElementById('kpi-total-paid').innerText = formatCurrency(totalPaid);
       document.getElementById('kpi-debt').innerText = formatCurrency(totalDebt);
       document.getElementById('kpi-suppliers').innerText = state.suppliers.length;
+
+      document.getElementById('kpi-overdue-amount').innerText = formatCurrency(overdueAmount);
+      document.getElementById('kpi-overdue-count').innerText = `${overdueCount} ${overdueCount === 1 ? 'factura vencida' : 'facturas vencidas'}`;
+
+      document.getElementById('current-date-badge').innerText = new Date().toLocaleDateString('es-AR');
+
+      // Alert list: Vencidas y Próximas
+      const alertsContainer = document.getElementById('overdue-alerts-list');
+      if (overdueAndNearItems.length === 0) {
+        alertsContainer.innerHTML = `<p class="py-4 text-slate-400 italic text-xs">No hay facturas vencidas ni próximas a vencer en los siguientes 7 días. ¡Todo al día!</p>`;
+      } else {
+        // Ordenar: primero vencidas (más antiguas primero), luego próximas a vencer
+        overdueAndNearItems.sort((a, b) => a.dueInfo.daysDiff - b.dueInfo.daysDiff);
+
+        alertsContainer.innerHTML = overdueAndNearItems.map(item => {
+          const sup = state.suppliers.find(s => s.id === item.purchase.supplierId) || { name: 'Desconocido' };
+          const badgeClass = item.type === 'overdue'
+            ? 'bg-rose-100 text-rose-800 border-rose-200'
+            : 'bg-amber-100 text-amber-800 border-amber-200';
+
+          return `
+            <div class="py-3 flex items-center justify-between">
+              <div class="space-y-0.5">
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-slate-800 text-sm">${sup.name}</span>
+                  <span class="text-xs font-mono text-slate-500">(${item.purchase.invoiceNumber})</span>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-semibold border ${badgeClass}">
+                    ${item.dueInfo.statusLabel}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500">${item.purchase.description} • Emisión: ${item.purchase.date} • Vencimiento: <span class="font-medium text-slate-700">${item.purchase.dueDate}</span></p>
+              </div>
+              <div class="text-right">
+                <span class="font-bold text-rose-600 text-sm block">${formatCurrency(item.debt)}</span>
+                <button onclick="openPaymentForInvoice('${item.purchase.id}')" class="mt-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">Pagar</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
 
       // Pending invoices widget
       const pendingPurchases = state.purchases
@@ -418,7 +955,7 @@
 
       const pendingContainer = document.getElementById('pending-invoices-list');
       if (pendingPurchases.length === 0) {
-        pendingContainer.innerHTML = `<p class="py-4 text-slate-400 italic">No hay facturas pendientes de pago.</p>`;
+        pendingContainer.innerHTML = `<p class="py-4 text-slate-400 italic text-xs">No hay facturas pendientes de pago.</p>`;
       } else {
         pendingContainer.innerHTML = pendingPurchases.map(p => {
           const sup = state.suppliers.find(s => s.id === p.supplierId) || { name: 'Desconocido' };
@@ -427,10 +964,10 @@
             <div class="py-3 flex justify-between items-center">
               <div>
                 <p class="font-medium text-slate-800">${sup.name} <span class="text-xs text-slate-500 font-normal">(${p.invoiceNumber})</span></p>
-                <p class="text-xs text-slate-500">${p.description}</p>
+                <p class="text-xs text-slate-500">${p.description} • Vencimiento: ${p.dueDate || '-'}</p>
               </div>
               <div class="text-right">
-                <span class="font-bold text-rose-600">${formatCurrency(debt)}</span>
+                <span class="font-bold text-rose-600 block">${formatCurrency(debt)}</span>
                 <p class="text-[11px] text-slate-400">Total: ${formatCurrency(p.total)}</p>
               </div>
             </div>
@@ -442,7 +979,7 @@
       const recentPayments = [...state.payments].reverse().slice(0, 5);
       const paymentsContainer = document.getElementById('recent-payments-list');
       if (recentPayments.length === 0) {
-        paymentsContainer.innerHTML = `<p class="py-4 text-slate-400 italic">No hay pagos registrados.</p>`;
+        paymentsContainer.innerHTML = `<p class="py-4 text-slate-400 italic text-xs">No hay pagos registrados.</p>`;
       } else {
         paymentsContainer.innerHTML = recentPayments.map(pay => {
           const sup = state.suppliers.find(s => s.id === pay.supplierId) || { name: 'Desconocido' };
@@ -479,8 +1016,11 @@
             <td class="p-4 text-right font-bold ${balance > 0 ? 'text-rose-600' : 'text-slate-700'}">
               ${formatCurrency(balance)}
             </td>
-            <td class="p-4 text-center">
-              <button onclick="deleteSupplier('${s.id}')" class="text-slate-400 hover:text-rose-600 p-1" title="Eliminar">
+            <td class="p-4 text-center space-x-1 no-print">
+              <button onclick="openSupplierStatement('${s.id}')" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-semibold inline-flex items-center">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1"></i> Estado de cuenta
+              </button>
+              <button onclick="deleteSupplier('${s.id}')" class="text-slate-400 hover:text-rose-600 p-1.5" title="Eliminar Proveedor">
                 <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
               </button>
             </td>
@@ -495,7 +1035,15 @@
 
       let list = state.purchases;
       if (supFilter) list = list.filter(p => p.supplierId === supFilter);
-      if (statusFilter) list = list.filter(p => getInvoiceStatus(p).label === statusFilter);
+
+      if (statusFilter === 'Vencida') {
+        list = list.filter(p => {
+          const debt = p.total - getInvoicePaymentsTotal(p.id);
+          return debt > 0 && getDueDateInfo(p).isOverdue;
+        });
+      } else if (statusFilter) {
+        list = list.filter(p => getInvoiceStatus(p).label === statusFilter);
+      }
 
       const tbody = document.getElementById('purchases-table-body');
       tbody.innerHTML = list.map(p => {
@@ -503,20 +1051,34 @@
         const status = getInvoiceStatus(p);
         const paid = getInvoicePaymentsTotal(p.id);
         const debt = p.total - paid;
+        const dueInfo = getDueDateInfo(p);
+
+        let dueBadgeClass = 'text-slate-500';
+        if (debt > 0) {
+          if (dueInfo.isOverdue) {
+            dueBadgeClass = 'bg-rose-100 text-rose-800 border border-rose-200 font-bold px-2 py-0.5 rounded';
+          } else if (dueInfo.isNearDue) {
+            dueBadgeClass = 'bg-amber-100 text-amber-800 border border-amber-200 font-bold px-2 py-0.5 rounded';
+          }
+        }
 
         return `
           <tr class="hover:bg-slate-50">
-            <td class="p-4 font-mono font-medium">${p.invoiceNumber}</td>
+            <td class="p-4 font-mono font-medium text-xs">${p.invoiceNumber}</td>
             <td class="p-4 text-slate-500 text-xs">${p.date}</td>
+            <td class="p-4 text-xs">
+              <span class="${dueBadgeClass}">${p.dueDate || '-'}</span>
+              ${debt > 0 && dueInfo.isOverdue ? `<div class="text-[10px] text-rose-600 font-semibold mt-0.5">${dueInfo.statusLabel}</div>` : ''}
+            </td>
             <td class="p-4 font-semibold text-slate-900">${sup.name}</td>
-            <td class="p-4 text-slate-600">${p.description}</td>
+            <td class="p-4 text-slate-600 text-xs">${p.description}</td>
             <td class="p-4 text-right font-bold text-slate-800">${formatCurrency(p.total)}</td>
             <td class="p-4 text-center">
               <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${status.color}">${status.label}</span>
             </td>
-            <td class="p-4 text-center">
+            <td class="p-4 text-center no-print">
               ${debt > 0 
-                ? `<button onclick="openPaymentForInvoice('${p.id}')" class="px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded text-xs font-semibold">Pagar</button>`
+                ? `<button onclick="openPaymentForInvoice('${p.id}')" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded text-xs font-semibold">Pagar</button>`
                 : `<span class="text-xs text-slate-400">Cancelado</span>`
               }
             </td>
@@ -544,14 +1106,91 @@
     }
 
     function populateSelectOptions() {
-      // Proveedores en filtros y modals
       const supOptions = state.suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
       document.getElementById('pur-supplier').innerHTML = `<option value="">Seleccione proveedor...</option>` + supOptions;
       document.getElementById('filter-purchase-supplier').innerHTML = `<option value="">Todos los proveedores</option>` + supOptions;
     }
 
+    function populateConfigForm() {
+      const company = state.company || defaultData.company;
+      document.getElementById('cfg-name').value = company.name || '';
+      document.getElementById('cfg-taxid').value = company.taxId || '';
+      document.getElementById('cfg-address').value = company.address || '';
+      document.getElementById('cfg-phone').value = company.phone || '';
+      document.getElementById('cfg-email').value = company.email || '';
+      document.getElementById('cfg-logo-url').value = company.logo && company.logo.startsWith('http') ? company.logo : '';
+
+      updateLogoPreview(company.logo);
+    }
+
+    function updateLogoPreview(logoSrc) {
+      const preview = document.getElementById('cfg-logo-preview');
+      const placeholder = document.getElementById('cfg-logo-placeholder');
+      if (logoSrc) {
+        preview.src = logoSrc;
+        preview.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+      } else {
+        preview.src = '';
+        preview.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+      }
+    }
+
     /**
-     * MODALS & ACTIONS
+     * LOGO HANDLING IN CONFIG
+     */
+    let tempLogoData = null;
+
+    function handleLogoFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 1500000) {
+        alert('El archivo es muy pesado (máximo recomendado: 1.5MB).');
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        tempLogoData = e.target.result;
+        updateLogoPreview(tempLogoData);
+        document.getElementById('cfg-logo-url').value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleLogoUrlInput(url) {
+      tempLogoData = url.trim();
+      updateLogoPreview(tempLogoData);
+      document.getElementById('cfg-logo-file').value = '';
+    }
+
+    function removeLogo() {
+      tempLogoData = '';
+      document.getElementById('cfg-logo-file').value = '';
+      document.getElementById('cfg-logo-url').value = '';
+      updateLogoPreview('');
+    }
+
+    function saveCompanyConfig(e) {
+      e.preventDefault();
+      const currentLogo = state.company ? state.company.logo : '';
+      const finalLogo = tempLogoData !== null ? tempLogoData : currentLogo;
+
+      state.company = {
+        name: document.getElementById('cfg-name').value.trim(),
+        taxId: document.getElementById('cfg-taxid').value.trim(),
+        address: document.getElementById('cfg-address').value.trim(),
+        phone: document.getElementById('cfg-phone').value.trim(),
+        email: document.getElementById('cfg-email').value.trim(),
+        logo: finalLogo
+      };
+
+      tempLogoData = null;
+      saveState();
+      alert('Configuración guardada correctamente.');
+    }
+
+    /**
+     * MODAL & ACTIONS
      */
     function openModal(id) {
       document.getElementById(id).classList.remove('hidden');
@@ -595,8 +1234,9 @@
       const newPur = {
         id: 'pur-' + Date.now(),
         invoiceNumber: document.getElementById('pur-invnum').value.trim(),
-        date: document.getElementById('pur-date').value,
         supplierId: document.getElementById('pur-supplier').value,
+        date: document.getElementById('pur-date').value,
+        dueDate: document.getElementById('pur-duedate').value,
         description: document.getElementById('pur-desc').value.trim(),
         total: parseFloat(document.getElementById('pur-total').value)
       };
@@ -653,7 +1293,7 @@
       const pur = state.purchases.find(p => p.id === purchaseId);
 
       const currentDebt = pur.total - getInvoicePaymentsTotal(pur.id);
-      if (amount > currentDebt) {
+      if (amount > currentDebt + 0.001) {
         alert(`El monto ingresado (${formatCurrency(amount)}) supera el saldo adeudado (${formatCurrency(currentDebt)}).`);
         return;
       }
@@ -673,6 +1313,126 @@
       closeModal('modal-payment');
     }
 
+    /**
+     * SUPPLIER STATEMENT OF ACCOUNT (ESTADO DE CUENTA)
+     */
+    let currentStatementSupplierId = null;
+
+    function openSupplierStatement(supplierId) {
+      currentStatementSupplierId = supplierId;
+      const sup = state.suppliers.find(s => s.id === supplierId);
+      if (!sup) return;
+
+      document.getElementById('stmt-supplier-name').innerText = sup.name;
+      document.getElementById('stmt-supplier-taxid').innerText = `CUIT: ${sup.taxId}`;
+      document.getElementById('stmt-supplier-email').innerText = `Email: ${sup.email || '-'}`;
+      document.getElementById('stmt-supplier-phone').innerText = `Tel: ${sup.phone || '-'}`;
+
+      // Facturas del proveedor
+      const supPurchases = state.purchases.filter(p => p.supplierId === supplierId);
+      const supPayments = state.payments.filter(p => p.supplierId === supplierId);
+
+      const totalBilled = supPurchases.reduce((acc, p) => acc + p.total, 0);
+      const totalPaid = supPayments.reduce((acc, p) => acc + p.amount, 0);
+      const balance = totalBilled - totalPaid;
+
+      document.getElementById('stmt-total-billed').innerText = formatCurrency(totalBilled);
+      document.getElementById('stmt-total-paid').innerText = formatCurrency(totalPaid);
+      document.getElementById('stmt-balance').innerText = formatCurrency(balance);
+
+      // Render Invoices
+      const invoicesTbody = document.getElementById('stmt-invoices-body');
+      if (supPurchases.length === 0) {
+        invoicesTbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400 italic">No registra facturas.</td></tr>`;
+      } else {
+        invoicesTbody.innerHTML = supPurchases.map(p => {
+          const paid = getInvoicePaymentsTotal(p.id);
+          const debt = p.total - paid;
+          const status = getInvoiceStatus(p);
+          const dueInfo = getDueDateInfo(p);
+
+          return `
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 font-mono font-medium text-slate-900">${p.invoiceNumber}</td>
+              <td class="p-2.5 text-slate-500">${p.date}</td>
+              <td class="p-2.5 ${debt > 0 && dueInfo.isOverdue ? 'text-rose-600 font-bold' : 'text-slate-500'}">${p.dueDate || '-'}</td>
+              <td class="p-2.5 text-slate-700">${p.description}</td>
+              <td class="p-2.5 text-right font-semibold text-slate-900">${formatCurrency(p.total)}</td>
+              <td class="p-2.5 text-right text-emerald-600 font-semibold">${formatCurrency(paid)}</td>
+              <td class="p-2.5 text-right font-bold ${debt > 0 ? 'text-rose-600' : 'text-slate-700'}">${formatCurrency(debt)}</td>
+              <td class="p-2.5 text-center">
+                <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${status.color}">${status.label}</span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Render Payments
+      const paymentsTbody = document.getElementById('stmt-payments-body');
+      if (supPayments.length === 0) {
+        paymentsTbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">No registra pagos efectuados.</td></tr>`;
+      } else {
+        paymentsTbody.innerHTML = supPayments.map(pay => {
+          const inv = state.purchases.find(p => p.id === pay.purchaseId);
+          return `
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 font-mono text-slate-500">${pay.id}</td>
+              <td class="p-2.5 text-slate-500">${pay.date}</td>
+              <td class="p-2.5 font-mono text-slate-700">${inv ? inv.invoiceNumber : 'N/A'}</td>
+              <td class="p-2.5 text-slate-700">${pay.method}</td>
+              <td class="p-2.5 text-right font-bold text-emerald-600">${formatCurrency(pay.amount)}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      openModal('modal-statement');
+      lucide.createIcons();
+    }
+
+    /**
+     * PRINT REPORT FUNCTIONS
+     */
+    function setupPrintHeader(reportTitle) {
+      document.getElementById('print-report-title').innerText = reportTitle;
+      document.getElementById('print-report-date').innerText = 'Fecha de emisión: ' + new Date().toLocaleDateString('es-AR') + ' ' + new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function printStatement() {
+      const sup = state.suppliers.find(s => s.id === currentStatementSupplierId);
+      const name = sup ? sup.name : 'Proveedor';
+      setupPrintHeader(`Estado de Cuenta - ${name}`);
+      document.body.classList.add('printing-modal');
+      window.print();
+      document.body.classList.remove('printing-modal');
+    }
+
+    function printPurchasesReport() {
+      const supFilter = document.getElementById('filter-purchase-supplier').value;
+      const statusFilter = document.getElementById('filter-purchase-status').value;
+      let title = 'Reporte de Facturas de Compra';
+
+      if (supFilter) {
+        const sup = state.suppliers.find(s => s.id === supFilter);
+        if (sup) title += ` - ${sup.name}`;
+      }
+      if (statusFilter) {
+        title += ` (Filtro: ${statusFilter})`;
+      }
+
+      setupPrintHeader(title);
+      window.print();
+    }
+
+    function printPaymentsReport() {
+      setupPrintHeader('Reporte de Libro de Pagos Emitidos');
+      window.print();
+    }
+
+    /**
+     * BACKUP & RESET
+     */
     function exportData() {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
       const downloadAnchor = document.createElement('a');
@@ -685,7 +1445,8 @@
 
     function resetData() {
       if (confirm('¿Restablecer datos predeterminados de fábrica? Esto borrará tus cambios locales.')) {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEY_V2);
+        localStorage.removeItem(STORAGE_KEY_V1);
         state = JSON.parse(JSON.stringify(defaultData));
         saveState();
       }
@@ -693,7 +1454,12 @@
 
     // Init App Lifecycle
     window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('pur-date').value = new Date().toISOString().split('T')[0];
+      const todayStr = new Date().toISOString().split('T')[0];
+      const purDateEl = document.getElementById('pur-date');
+      const purDueEl = document.getElementById('pur-duedate');
+      if (purDateEl) purDateEl.value = todayStr;
+      if (purDueEl) purDueEl.value = todayStr;
+
       renderApp();
     });
   </script>
