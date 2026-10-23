@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Proveedores | Compras & Pagos</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a', 700: '#15803d' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0">
+      <div class="h-16 flex items-center px-6 bg-slate-950 font-bold text-lg text-white tracking-wide border-b border-slate-800">
+        <i data-lucide="boxes" class="w-6 h-6 mr-3 text-emerald-400"></i>
+        AP Manager
+      </div>
+      <nav class="flex-1 px-4 py-6 space-y-2">
+        <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-emerald-600 text-white">
+          <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+        </button>
+        <button onclick="navigate('suppliers')" id="nav-suppliers" class="nav-item w-full flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+          <i data-lucide="users" class="w-5 h-5 mr-3"></i> Proveedores
+        </button>
+        <button onclick="navigate('purchases')" id="nav-purchases" class="nav-item w-full flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+          <i data-lucide="shopping-cart" class="w-5 h-5 mr-3"></i> Compras / Facturas
+        </button>
+        <button onclick="navigate('payments')" id="nav-payments" class="nav-item w-full flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white">
+          <i data-lucide="credit-card" class="w-5 h-5 mr-3"></i> Tesorería / Pagos
+        </button>
+      </nav>
+      <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
+        Ambiente: <span class="text-emerald-400 font-semibold">Producción</span>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="flex-1 flex flex-col overflow-y-auto">
+      
+      <!-- TOPBAR -->
+      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
+        <h1 id="page-title" class="text-xl font-bold text-slate-800">Panel Principal</h1>
+        <div class="flex items-center space-x-3">
+          <button onclick="exportData()" class="px-3 py-2 text-xs font-semibold text-slate-600 border border-slate-300 rounded hover:bg-slate-100 flex items-center">
+            <i data-lucide="download" class="w-4 h-4 mr-1"></i> Backup JSON
+          </button>
+          <button onclick="resetData()" class="px-3 py-2 text-xs font-semibold text-rose-600 border border-rose-200 rounded hover:bg-rose-50 flex items-center">
+            <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i> Reset Datos
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT SECTIONS -->
+      <main class="flex-1 p-8">
+        
+        <!-- VIEW: DASHBOARD -->
+        <section id="view-dashboard" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Comprado</span>
+              <p id="kpi-total-purchases" class="text-2xl font-bold text-slate-900 mt-2">$0.00</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Pagado</span>
+              <p id="kpi-total-paid" class="text-2xl font-bold text-emerald-600 mt-2">$0.00</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cuentas por Pagar (Deuda)</span>
+              <p id="kpi-debt" class="text-2xl font-bold text-rose-600 mt-2">$0.00</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Proveedores Activos</span>
+              <p id="kpi-suppliers" class="text-2xl font-bold text-slate-800 mt-2">0</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h2 class="text-base font-bold mb-4 flex items-center text-slate-800">
+                <i data-lucide="alert-circle" class="w-5 h-5 mr-2 text-amber-500"></i> Facturas Pendientes de Pago
+              </h2>
+              <div id="pending-invoices-list" class="divide-y divide-slate-100 text-sm"></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h2 class="text-base font-bold mb-4 flex items-center text-slate-800">
+                <i data-lucide="history" class="w-5 h-5 mr-2 text-indigo-500"></i> Últimos Pagos Realizados
+              </h2>
+              <div id="recent-payments-list" class="divide-y divide-slate-100 text-sm"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: PROVEEDORES -->
+        <section id="view-suppliers" class="space-y-6 hidden">
+          <div class="flex justify-between items-center">
+            <input type="text" id="search-supplier" oninput="renderSuppliers()" placeholder="Buscar por Nombre o CUIT..." class="px-4 py-2 border rounded-lg w-80 text-sm focus:ring-2 focus:ring-slate-900 outline-none">
+            <button onclick="openModal('modal-supplier')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center">
+              <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nuevo Proveedor
+            </button>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                <tr>
+                  <th class="p-4">Razón Social</th>
+                  <th class="p-4">CUIT / Tax ID</th>
+                  <th class="p-4">Contacto</th>
+                  <th class="p-4 text-right">Saldo Adeudado</th>
+                  <th class="p-4 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="suppliers-table-body" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- VIEW: COMPRAS -->
+        <section id="view-purchases" class="space-y-6 hidden">
+          <div class="flex justify-between items-center">
+            <div class="flex space-x-3">
+              <select id="filter-purchase-supplier" onchange="renderPurchases()" class="px-3 py-2 border rounded-lg text-sm">
+                <option value="">Todos los proveedores</option>
+              </select>
+              <select id="filter-purchase-status" onchange="renderPurchases()" class="px-3 py-2 border rounded-lg text-sm">
+                <option value="">Todos los estados</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Parcial">Pago Parcial</option>
+                <option value="Pagado">Pagado</option>
+              </select>
+            </div>
+            <button onclick="openModal('modal-purchase')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 flex items-center">
+              <i data-lucide="file-plus" class="w-4 h-4 mr-2"></i> Nueva Factura / Compra
+            </button>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                <tr>
+                  <th class="p-4">N° Factura</th>
+                  <th class="p-4">Fecha</th>
+                  <th class="p-4">Proveedor</th>
+                  <th class="p-4">Concepto</th>
+                  <th class="p-4 text-right">Monto</th>
+                  <th class="p-4 text-center">Estado</th>
+                  <th class="p-4 text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="purchases-table-body" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- VIEW: PAGOS -->
+        <section id="view-payments" class="space-y-6 hidden">
+          <div class="flex justify-between items-center">
+            <h2 class="text-sm font-semibold text-slate-500">Historial de órdenes de pago emitidas</h2>
+            <button onclick="openPaymentModal()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 flex items-center">
+              <i data-lucide="dollar-sign" class="w-4 h-4 mr-2"></i> Registrar Pago
+            </button>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                <tr>
+                  <th class="p-4">ID Recibo</th>
+                  <th class="p-4">Fecha</th>
+                  <th class="p-4">Proveedor</th>
+                  <th class="p-4">N° Factura Aplicada</th>
+                  <th class="p-4">Método</th>
+                  <th class="p-4 text-right">Monto Pagado</th>
+                </tr>
+              </thead>
+              <tbody id="payments-table-body" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Modal Nuevo Proveedor -->
+  <div id="modal-supplier" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-xl space-y-4">
+      <h3 class="text-lg font-bold text-slate-900">Registrar Proveedor</h3>
+      <form id="form-supplier" onsubmit="saveSupplier(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Razón Social *</label>
+          <input type="text" id="sup-name" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">CUIT / Identificación Fiscal *</label>
+          <input type="text" id="sup-taxid" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Email de Contacto</label>
+          <input type="email" id="sup-email" class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+          <input type="text" id="sup-phone" class="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-slate-900">
+        </div>
+        <div class="flex justify-end space-x-2 pt-4">
+          <button type="button" onclick="closeModal('modal-supplier')" class="px-4 py-2 border rounded-lg text-sm hover:bg-slate-50">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Nueva Compra -->
+  <div id="modal-purchase" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-lg rounded-xl p-6 shadow-xl space-y-4">
+      <h3 class="text-lg font-bold text-slate-900">Ingresar Factura de Proveedor</h3>
+      <form id="form-purchase" onsubmit="savePurchase(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">N° Comprobante *</label>
+            <input type="text" id="pur-invnum" placeholder="FC-0001-00029" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha Emisión *</label>
+            <input type="date" id="pur-date" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Proveedor *</label>
+          <select id="pur-supplier" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Descripción / Concepto *</label>
+          <input type="text" id="pur-desc" placeholder="p. ej. Servidores Cloud Mensuales" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Monto Total ($) *</label>
+          <input type="number" step="0.01" min="0.01" id="pur-total" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+        </div>
+        <div class="flex justify-end space-x-2 pt-4">
+          <button type="button" onclick="closeModal('modal-purchase')" class="px-4 py-2 border rounded-lg text-sm hover:bg-slate-50">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800">Registrar Factura</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Nuevo Pago -->
+  <div id="modal-payment" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-lg rounded-xl p-6 shadow-xl space-y-4">
+      <h3 class="text-lg font-bold text-slate-900">Emitir Orden de Pago</h3>
+      <form id="form-payment" onsubmit="savePayment(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Factura a Pagar *</label>
+          <select id="pay-purchase-id" onchange="onPaymentInvoiceChange()" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2"></select>
+          <p id="pay-invoice-help" class="text-xs text-slate-500 mt-1"></p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Monto a Pagar ($) *</label>
+            <input type="number" step="0.01" min="0.01" id="pay-amount" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de Pago *</label>
+            <input type="date" id="pay-date" required class="w-full border p-2 rounded text-sm outline-none focus:ring-2">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Método de Pago</label>
+          <select id="pay-method" class="w-full border p-2 rounded text-sm outline-none">
+            <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+            <option value="Cheque / E-Check">Cheque / E-Check</option>
+            <option value="Efectivo">Efectivo</option>
+          </select>
+        </div>
+        <div class="flex justify-end space-x-2 pt-4">
+          <button type="button" onclick="closeModal('modal-payment')" class="px-4 py-2 border rounded-lg text-sm hover:bg-slate-50">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700">Confirmar Pago</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- APPLICATION JAVASCRIPT LOGIC -->
+  <script>
+    /**
+     * DOMAIN STATE & STORAGE
+     */
+    const STORAGE_KEY = 'ERP_PROVEEDORES_DATA_V1';
+
+    const defaultData = {
+      suppliers: [
+        { id: 'sup-1', name: 'Datacenter Sur S.A.', taxId: '30-71122334-9', email: 'facturacion@datacentersur.com', phone: '+54 11 4455-6677' },
+        { id: 'sup-2', name: 'Papelera Industrial SRL', taxId: '30-65544332-1', email: 'ventas@papeleraind.com', phone: '+54 11 9988-1122' },
+        { id: 'sup-3', name: 'Tech Solutions Consultoría', taxId: '33-88990011-9', email: 'contacto@techsolutions.io', phone: '+54 11 3322-1100' }
+      ],
+      purchases: [
+        { id: 'pur-1', invoiceNumber: 'A-0001-00004521', supplierId: 'sup-1', date: '2026-03-01', description: 'Housing de Servidores Marzo', total: 1200.00 },
+        { id: 'pur-2', invoiceNumber: 'A-0002-00000891', supplierId: 'sup-2', date: '2026-03-05', description: 'Insumos de oficina y papelería', total: 450.00 },
+        { id: 'pur-3', invoiceNumber: 'B-0005-00001123', supplierId: 'sup-3', date: '2026-03-10', description: 'Consultoría Cloud & DevOps', total: 3400.00 }
+      ],
+      payments: [
+        { id: 'pay-1', purchaseId: 'pur-1', supplierId: 'sup-1', date: '2026-03-04', amount: 1200.00, method: 'Transferencia Bancaria' },
+        { id: 'pay-2', purchaseId: 'pur-2', supplierId: 'sup-2', date: '2026-03-12', amount: 200.00, method: 'E-Check' }
+      ]
+    };
+
+    let state = loadState();
+
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultData));
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderApp();
+    }
+
+    /**
+     * BUSINESS LOGIC CALCULATIONS
+     */
+    function getInvoicePaymentsTotal(purchaseId) {
+      return state.payments
+        .filter(p => p.purchaseId === purchaseId)
+        .reduce((acc, p) => acc + p.amount, 0);
+    }
+
+    function getInvoiceStatus(purchase) {
+      const paid = getInvoicePaymentsTotal(purchase.id);
+      if (paid >= purchase.total) return { label: 'Pagado', color: 'bg-emerald-100 text-emerald-800' };
+      if (paid > 0) return { label: 'Parcial', color: 'bg-amber-100 text-amber-800' };
+      return { label: 'Pendiente', color: 'bg-rose-100 text-rose-800' };
+    }
+
+    function getSupplierBalance(supplierId) {
+      const totalPurchased = state.purchases
+        .filter(p => p.supplierId === supplierId)
+        .reduce((sum, p) => sum + p.total, 0);
+      
+      const totalPaid = state.payments
+        .filter(p => p.supplierId === supplierId)
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      return totalPurchased - totalPaid;
+    }
+
+    const formatCurrency = (val) => '$ ' + Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+
+    /**
+     * NAVIGATION ROUTER
+     */
+    function navigate(viewName) {
+      document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.remove('bg-emerald-600', 'text-white');
+        el.classList.add('hover:bg-slate-800', 'hover:text-white');
+      });
+
+      const target = document.getElementById(`view-${viewName}`);
+      const btn = document.getElementById(`nav-${viewName}`);
+      if (target && btn) {
+        target.classList.remove('hidden');
+        btn.classList.add('bg-emerald-600', 'text-white');
+        btn.classList.remove('hover:bg-slate-800');
+      }
+
+      const titles = {
+        dashboard: 'Panel General',
+        suppliers: 'Gestión de Proveedores',
+        purchases: 'Cuentas por Pagar: Facturas de Compra',
+        payments: 'Tesorería: Libro de Pagos'
+      };
+      document.getElementById('page-title').innerText = titles[viewName];
+    }
+
+    /**
+     * RENDERING
+     */
+    function renderApp() {
+      renderDashboard();
+      renderSuppliers();
+      renderPurchases();
+      renderPayments();
+      populateSelectOptions();
+      lucide.createIcons();
+    }
+
+    function renderDashboard() {
+      const totalPurchases = state.purchases.reduce((acc, p) => acc + p.total, 0);
+      const totalPaid = state.payments.reduce((acc, p) => acc + p.amount, 0);
+      const totalDebt = totalPurchases - totalPaid;
+
+      document.getElementById('kpi-total-purchases').innerText = formatCurrency(totalPurchases);
+      document.getElementById('kpi-total-paid').innerText = formatCurrency(totalPaid);
+      document.getElementById('kpi-debt').innerText = formatCurrency(totalDebt);
+      document.getElementById('kpi-suppliers').innerText = state.suppliers.length;
+
+      // Pending invoices widget
+      const pendingPurchases = state.purchases
+        .map(p => ({ ...p, paid: getInvoicePaymentsTotal(p.id) }))
+        .filter(p => p.paid < p.total);
+
+      const pendingContainer = document.getElementById('pending-invoices-list');
+      if (pendingPurchases.length === 0) {
+        pendingContainer.innerHTML = `<p class="py-4 text-slate-400 italic">No hay facturas pendientes de pago.</p>`;
+      } else {
+        pendingContainer.innerHTML = pendingPurchases.map(p => {
+          const sup = state.suppliers.find(s => s.id === p.supplierId) || { name: 'Desconocido' };
+          const debt = p.total - p.paid;
+          return `
+            <div class="py-3 flex justify-between items-center">
+              <div>
+                <p class="font-medium text-slate-800">${sup.name} <span class="text-xs text-slate-500 font-normal">(${p.invoiceNumber})</span></p>
+                <p class="text-xs text-slate-500">${p.description}</p>
+              </div>
+              <div class="text-right">
+                <span class="font-bold text-rose-600">${formatCurrency(debt)}</span>
+                <p class="text-[11px] text-slate-400">Total: ${formatCurrency(p.total)}</p>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Recent payments widget
+      const recentPayments = [...state.payments].reverse().slice(0, 5);
+      const paymentsContainer = document.getElementById('recent-payments-list');
+      if (recentPayments.length === 0) {
+        paymentsContainer.innerHTML = `<p class="py-4 text-slate-400 italic">No hay pagos registrados.</p>`;
+      } else {
+        paymentsContainer.innerHTML = recentPayments.map(pay => {
+          const sup = state.suppliers.find(s => s.id === pay.supplierId) || { name: 'Desconocido' };
+          return `
+            <div class="py-3 flex justify-between items-center">
+              <div>
+                <p class="font-medium text-slate-800">${sup.name}</p>
+                <p class="text-xs text-slate-500">${pay.method} • ${pay.date}</p>
+              </div>
+              <span class="font-bold text-emerald-600">${formatCurrency(pay.amount)}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function renderSuppliers() {
+      const search = (document.getElementById('search-supplier')?.value || '').toLowerCase();
+      const filtered = state.suppliers.filter(s => 
+        s.name.toLowerCase().includes(search) || s.taxId.includes(search)
+      );
+
+      const tbody = document.getElementById('suppliers-table-body');
+      tbody.innerHTML = filtered.map(s => {
+        const balance = getSupplierBalance(s.id);
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-4 font-semibold text-slate-900">${s.name}</td>
+            <td class="p-4 font-mono text-xs text-slate-500">${s.taxId}</td>
+            <td class="p-4 text-xs text-slate-600">
+              <div>${s.email || '-'}</div>
+              <div class="text-slate-400">${s.phone || '-'}</div>
+            </td>
+            <td class="p-4 text-right font-bold ${balance > 0 ? 'text-rose-600' : 'text-slate-700'}">
+              ${formatCurrency(balance)}
+            </td>
+            <td class="p-4 text-center">
+              <button onclick="deleteSupplier('${s.id}')" class="text-slate-400 hover:text-rose-600 p-1" title="Eliminar">
+                <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderPurchases() {
+      const supFilter = document.getElementById('filter-purchase-supplier').value;
+      const statusFilter = document.getElementById('filter-purchase-status').value;
+
+      let list = state.purchases;
+      if (supFilter) list = list.filter(p => p.supplierId === supFilter);
+      if (statusFilter) list = list.filter(p => getInvoiceStatus(p).label === statusFilter);
+
+      const tbody = document.getElementById('purchases-table-body');
+      tbody.innerHTML = list.map(p => {
+        const sup = state.suppliers.find(s => s.id === p.supplierId) || { name: 'N/A' };
+        const status = getInvoiceStatus(p);
+        const paid = getInvoicePaymentsTotal(p.id);
+        const debt = p.total - paid;
+
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-4 font-mono font-medium">${p.invoiceNumber}</td>
+            <td class="p-4 text-slate-500 text-xs">${p.date}</td>
+            <td class="p-4 font-semibold text-slate-900">${sup.name}</td>
+            <td class="p-4 text-slate-600">${p.description}</td>
+            <td class="p-4 text-right font-bold text-slate-800">${formatCurrency(p.total)}</td>
+            <td class="p-4 text-center">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${status.color}">${status.label}</span>
+            </td>
+            <td class="p-4 text-center">
+              ${debt > 0 
+                ? `<button onclick="openPaymentForInvoice('${p.id}')" class="px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded text-xs font-semibold">Pagar</button>`
+                : `<span class="text-xs text-slate-400">Cancelado</span>`
+              }
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderPayments() {
+      const tbody = document.getElementById('payments-table-body');
+      tbody.innerHTML = state.payments.map(pay => {
+        const sup = state.suppliers.find(s => s.id === pay.supplierId) || { name: 'N/A' };
+        const inv = state.purchases.find(p => p.id === pay.purchaseId);
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-4 font-mono text-xs text-slate-400">${pay.id}</td>
+            <td class="p-4 text-slate-500 text-xs">${pay.date}</td>
+            <td class="p-4 font-semibold text-slate-900">${sup.name}</td>
+            <td class="p-4 font-mono text-xs text-slate-600">${inv ? inv.invoiceNumber : 'N/A'}</td>
+            <td class="p-4 text-slate-600 text-xs">${pay.method}</td>
+            <td class="p-4 text-right font-bold text-emerald-600">${formatCurrency(pay.amount)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function populateSelectOptions() {
+      // Proveedores en filtros y modals
+      const supOptions = state.suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+      document.getElementById('pur-supplier').innerHTML = `<option value="">Seleccione proveedor...</option>` + supOptions;
+      document.getElementById('filter-purchase-supplier').innerHTML = `<option value="">Todos los proveedores</option>` + supOptions;
+    }
+
+    /**
+     * MODALS & ACTIONS
+     */
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      document.getElementById(id).classList.add('flex');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      document.getElementById(id).classList.remove('flex');
+    }
+
+    function saveSupplier(e) {
+      e.preventDefault();
+      const newSup = {
+        id: 'sup-' + Date.now(),
+        name: document.getElementById('sup-name').value.trim(),
+        taxId: document.getElementById('sup-taxid').value.trim(),
+        email: document.getElementById('sup-email').value.trim(),
+        phone: document.getElementById('sup-phone').value.trim()
+      };
+      state.suppliers.push(newSup);
+      saveState();
+      e.target.reset();
+      closeModal('modal-supplier');
+    }
+
+    function deleteSupplier(id) {
+      const hasPurchases = state.purchases.some(p => p.supplierId === id);
+      if (hasPurchases) {
+        alert('No podés eliminar este proveedor porque posee facturas/compras asociadas en el sistema.');
+        return;
+      }
+      if (confirm('¿Seguro de dar de baja al proveedor?')) {
+        state.suppliers = state.suppliers.filter(s => s.id !== id);
+        saveState();
+      }
+    }
+
+    function savePurchase(e) {
+      e.preventDefault();
+      const newPur = {
+        id: 'pur-' + Date.now(),
+        invoiceNumber: document.getElementById('pur-invnum').value.trim(),
+        date: document.getElementById('pur-date').value,
+        supplierId: document.getElementById('pur-supplier').value,
+        description: document.getElementById('pur-desc').value.trim(),
+        total: parseFloat(document.getElementById('pur-total').value)
+      };
+      state.purchases.push(newPur);
+      saveState();
+      e.target.reset();
+      closeModal('modal-purchase');
+    }
+
+    function openPaymentModal(selectedPurchaseId = null) {
+      const pendingInvoices = state.purchases.filter(p => {
+        const paid = getInvoicePaymentsTotal(p.id);
+        return paid < p.total;
+      });
+
+      const select = document.getElementById('pay-purchase-id');
+      if (pendingInvoices.length === 0) {
+        alert('No existen facturas con saldo pendiente para saldar.');
+        return;
+      }
+
+      select.innerHTML = pendingInvoices.map(p => {
+        const sup = state.suppliers.find(s => s.id === p.supplierId);
+        const debt = p.total - getInvoicePaymentsTotal(p.id);
+        return `<option value="${p.id}" ${p.id === selectedPurchaseId ? 'selected' : ''}>
+          ${p.invoiceNumber} - ${sup ? sup.name : ''} (Saldo: ${formatCurrency(debt)})
+        </option>`;
+      }).join('');
+
+      document.getElementById('pay-date').value = new Date().toISOString().split('T')[0];
+      onPaymentInvoiceChange();
+      openModal('modal-payment');
+    }
+
+    function openPaymentForInvoice(purchaseId) {
+      openPaymentModal(purchaseId);
+    }
+
+    function onPaymentInvoiceChange() {
+      const purchaseId = document.getElementById('pay-purchase-id').value;
+      const pur = state.purchases.find(p => p.id === purchaseId);
+      if (pur) {
+        const debt = pur.total - getInvoicePaymentsTotal(pur.id);
+        document.getElementById('pay-amount').value = debt;
+        document.getElementById('pay-amount').max = debt;
+        document.getElementById('pay-invoice-help').innerText = `Saldo máximo aplicable a esta factura: ${formatCurrency(debt)}`;
+      }
+    }
+
+    function savePayment(e) {
+      e.preventDefault();
+      const purchaseId = document.getElementById('pay-purchase-id').value;
+      const amount = parseFloat(document.getElementById('pay-amount').value);
+      const pur = state.purchases.find(p => p.id === purchaseId);
+
+      const currentDebt = pur.total - getInvoicePaymentsTotal(pur.id);
+      if (amount > currentDebt) {
+        alert(`El monto ingresado (${formatCurrency(amount)}) supera el saldo adeudado (${formatCurrency(currentDebt)}).`);
+        return;
+      }
+
+      const newPay = {
+        id: 'PAY-' + Math.floor(1000 + Math.random() * 9000),
+        purchaseId: purchaseId,
+        supplierId: pur.supplierId,
+        date: document.getElementById('pay-date').value,
+        amount: amount,
+        method: document.getElementById('pay-method').value
+      };
+
+      state.payments.push(newPay);
+      saveState();
+      e.target.reset();
+      closeModal('modal-payment');
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `ERP_Backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function resetData() {
+      if (confirm('¿Restablecer datos predeterminados de fábrica? Esto borrará tus cambios locales.')) {
+        localStorage.removeItem(STORAGE_KEY);
+        state = JSON.parse(JSON.stringify(defaultData));
+        saveState();
+      }
+    }
+
+    // Init App Lifecycle
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('pur-date').value = new Date().toISOString().split('T')[0];
+      renderApp();
+    });
+  </script>
+</body>
+</html>
